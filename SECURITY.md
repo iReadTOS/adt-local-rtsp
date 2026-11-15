@@ -22,3 +22,11 @@ Captured API responses may contain camera usernames/passwords, session cookies, 
 Do **not** post real credentials or raw account data in a public issue. If you discover an issue with this repository's examples or helper code, first describe the impact **without reproduction secrets**, and use GitHub's private vulnerability reporting feature if enabled on this repository.
 
 This project does not claim that cameras remain accessible after an ADT cancellation, a reboot, credential rotation, or an internet outage; these are untested.
+
+## Experimental motion/MQTT and offline testing
+
+The native PIR script reads the captured ADT response **locally in Python**, but RTSP port 554 is typically plaintext on the LAN. The publisher, if used, reads a separate mode-`0600` TOML credentials file **outside Git** and uses plaintext MQTT on the trusted LAN; do not port-forward 1883 or open a broker simply for this project. **The experimental MQTT integration is not required and has not been tested with a live broker here.** The RTSP client's default authentication prefers Digest and refuses Basic-only servers unless the operator explicitly requests `--auth basic`.
+
+Never publish native packet captures: even when the extracted metadata is innocuous, a full network capture can include authenticated RTSP URLs, query tokens, credentials and camera footage. Public documentation deliberately uses generic camera labels and placeholder IPs.
+
+For offline tests, block **only an authorized camera's WAN access** using reversible rules; do not disconnect the entire network or bypass alarms. Treat both cloud independence and operation after ADT cancellation as **unknown**. See [offline test plan](docs/OFFLINE_TEST_PLAN.md).

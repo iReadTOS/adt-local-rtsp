@@ -84,7 +84,9 @@ The raw high-port `lre` URL is **not** a drop-in URL for the Scrypted RTSP Camer
 
 **Verified:** An authorized ADT Control response can provide credentials; the tested cameras can deliver usable local video via the documented relay; and a driveway OC845 can serve and display live video directly through standard RTSP/TCP to Scrypted on HAOS.
 
-**Unverified:** Functioning without internet, after ADT service cancellation, after reboot or credential rotation, on additional camera firmware/models, with long-term Scrypted stability, with HomeKit Secure Video, with motion events, or with audio in the NVR. We do **not** suggest disconnecting a monitored alarm system or canceling a subscription to test this prematurely.
+**Later verified:** Scrypted/OpenCV motion events produced actual HomeKit Secure Video recordings viewable in Apple Home. Direct RTP motion parsing on two OC845 cameras also worked, but it was **not** used to trigger HKSV. See [native motion research](NATIVE_PIR_FINDINGS.md).
+
+**Still unverified:** Functioning without camera WAN, after ADT service cancellation, after camera reboot or credential rotation, on additional firmware/models, with prolonged Scrypted stability, or per-camera audio in the NVR. See the [reversible offline test plan](OFFLINE_TEST_PLAN.md). We do **not** suggest disconnecting a monitored alarm system or canceling a subscription to test this prematurely.
 
 ## Sources and technical references
 
@@ -95,3 +97,9 @@ The raw high-port `lre` URL is **not** a drop-in URL for the Scrypted RTSP Camer
 - [Apple Lockdown Mode](https://support.apple.com/en-us/105120)
 
 The [how-to](GETTING_STARTED.md) is the maintained procedure. This page records *why* we chose it, what failed along the way, and the limits of our evidence.
+
+## Experiment 5 — Proprietary motion metadata and HKSV (subsequent validation)
+
+With ordinary port-554 RTSP/TCP already working, we verified that adding `padding=yes` to the existing authenticated stream query can expose proprietary Sercomm metadata in the RTP padding. A standalone read-only Python RTSP client decoded command `0x03` motion pulses on **both outdoor OC845 units**, but the indoor RC845 transmitted related metadata **without** that PIR command. See [the raw packet-format findings](NATIVE_PIR_FINDINGS.md) for structure, measured counts, and uncertainties.
+
+Separately, **Scrypted/OpenCV motion successfully triggered real HomeKit Secure Video recordings in Apple Home**. This verifies a functional existing recording path under active ADT service, not use of native PIR as an HKSV trigger. The camera's cloud independence and service-cancellation outcome remain untested. The [offline research plan](OFFLINE_TEST_PLAN.md) explicitly distinguishes camera-only WAN blocking from deprovisioning or cancellation.

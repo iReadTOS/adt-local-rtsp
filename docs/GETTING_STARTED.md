@@ -147,7 +147,7 @@ Password: EXAMPLE_ONLY_DO_NOT_USE
 4. Save and test the live preview. Name the device using the camera/IP you actually selected.
 5. Repeat for additional cameras. The same account capture can contain several different camera entries with **different credentials and stream queries**.
 
-We verified a live Scrypted preview for one **OC845** camera under **Scrypted v0.147.0 on HAOS**; the RC845 and other OC845 were subsequently added. We haven't documented audio, HomeKit Secure Video, long-term stability, or independent live preview evidence for those other two yet. See [the Scrypted / NVR guide](nvr-scrypted.md) for detailed notes.
+We verified a live Scrypted preview for one **OC845** camera under **Scrypted v0.147.0 on HAOS**; the RC845 and other OC845 were subsequently added. Scrypted/OpenCV subsequently triggered real HomeKit Secure Video clips viewed in Apple Home; per-camera audio, recording behavior and long-term stability remain incompletely characterized. See [the Scrypted / NVR guide](nvr-scrypted.md) for detailed notes.
 
 ### Blue Iris or another NVR
 

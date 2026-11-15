@@ -38,3 +38,7 @@ adt-camera-settings*.txt
 *camera-settings*.txt
 login-response*.xml
 adt-response*.xml
+
+# Optional MQTT credentials (keep private, outside repo)
+mqtt.toml
+*.secret.toml

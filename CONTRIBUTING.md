@@ -12,7 +12,7 @@ When filing an issue or pull request, include:
 
 Please do not submit raw response captures, login data, or real RTSP URLs even in private pull requests. Use invented/sample values in tests.
 
-**Scrypted / HomeKit:** We have verified a live OC845 picture in the Scrypted RTSP plugin under HAOS, and added the two other cameras. Please label untested models and features as hypotheses. HomeKit Secure Video, recording, motion events, and prolonged stability are not yet established.
+**Scrypted / HomeKit:** We verified an OC845 live picture in Scrypted on HAOS and viewable HomeKit Secure Video recordings triggered by OpenCV. The two other cameras were added; prolonged reliability, per-camera audio, and camera operation after cancellation remain unverified. Native PIR was independently verified on both OC845 cameras, **not** as an HKSV trigger. Label untested models/features and MQTT experiments as hypotheses; see [native motion evidence](docs/NATIVE_PIR_FINDINGS.md).
 
 ## Contributing a compatibility report
 

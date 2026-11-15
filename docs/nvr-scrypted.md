@@ -2,9 +2,9 @@
 
 If you have not captured the ADT response yet, start with the [step-by-step how-to](GETTING_STARTED.md). The [research notes](DISCOVERY.md) explain how we discovered the two RTSP transports; you do not need the research notes to configure Scrypted.
 
-**Tested November 15, 2026:** A live OC845 driveway video feed displayed through Scrypted **v0.147.0**, using the RTSP Camera plugin inside a Home Assistant OS add-on. The RC845 basement and second OC845 (lake) were subsequently added to Scrypted by the same user. Full audio, HomeKit, motion events, long-term operation, and independent live previews of both remaining cameras have **not** been documented yet.
+**Tested November 15, 2026:** A live OC845 driveway video feed displayed through Scrypted **v0.147.0**, using the RTSP Camera plugin inside a Home Assistant OS add-on. The RC845 basement and second OC845 (lake) were subsequently added to Scrypted by the same user. Scrypted/OpenCV subsequently triggered viewable **HomeKit Secure Video recordings** in Apple Home; **native PIR was not used to trigger them**. Per-camera audio, long-term operation and complete independent feature checks for the other cameras remain unverified.
 
-**No restreamer, `socat`, MediaMTX, or FFmpeg command was required for the direct port-554 Scrypted feed.** The original captured `lre` URL used an *unusual, HTTPS-tunneled high port*, but the **same credentials** were accepted by **standard RTSP/TCP on port 554**. Only the driveway camera's direct port-554 FFprobe result and Scrypted preview are documented so far. Different firmware may behave differently.
+**No restreamer, `socat`, MediaMTX, or FFmpeg command was required for the direct port-554 Scrypted feed.** The original captured `lre` URL used an *unusual, HTTPS-tunneled high port*, but the **same credentials** were accepted by **standard RTSP/TCP on port 554**. A later standalone Python RTSP client also authenticated and received direct port-554 RTP from the other OC845 and the indoor RC845, but this alone does not prove audio or HKSV on every camera. Different firmware may behave differently.
 
 ## Export Scrypted camera settings
 
@@ -53,3 +53,9 @@ Direct port 554 usually carries **unencrypted** RTSP, including authentication e
 The *high port* in the original `lre` requires RTSP-over-HTTPS tunneling and is **not** a substitute for port 554. If standard RTSP on port 554 fails on another camera/firmware, see the [optional `socat` TLS relay walkthrough](TLS_FALLBACK.md). We **do not** require MediaMTX for our confirmed Scrypted setup.
 
 We have **not** established that any camera will function without internet or after an ADT subscription ends. Avoid disrupting a monitored security system while testing.
+
+## Recording: current tested path
+
+The recording pipeline used here was **RTSP Camera → OpenCV Motion Sensor → Scrypted HomeKit plugin → HomePod / HomeKit Secure Video**. Recordings were visible in Apple Home. Leave that working setup intact if you need wide-area motion detection: the OC845's PIR range is significantly shorter than its video view. See [native motion research](NATIVE_PIR_FINDINGS.md). The optional native PIR and MQTT experiments are **separate** and are not prerequisites for streaming or HKSV.
+
+A HomePod and Apple services need their normal internet connection for cloud HKSV uploads. Camera-only WAN isolation and **ADT service cancellation** are not equivalent; see the [offline test plan](OFFLINE_TEST_PLAN.md).

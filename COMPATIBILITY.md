@@ -6,11 +6,13 @@ Only add results that were **actually tested**, and differentiate "metadata foun
 
 | Camera model | Location (example only) | ADT app / API | Local media result | Subscription-independent? |
 | --- | --- | --- | --- | --- |
-| OC845 | Driveway | ADT Control iOS · `UberSeamlessLoginNew` | **Pass:** H.264 1920×1080 + G.711 μ-law audio; FFplay; **direct RTSP:554** metadata; **Scrypted v0.147.0 live preview** | **Not tested** |
-| RC845 | Basement | ADT Control iOS · `UberSeamlessLoginNew` | **Pass:** Live video in FFplay (TLS bridge); added to Scrypted RTSP plugin | **Not tested** |
-| OC845 | Lake | ADT Control iOS · `UberSeamlessLoginNew` | **Pass:** Live video in FFplay (TLS bridge); added to Scrypted RTSP plugin | **Not tested** |
+| OC845 A (outdoor) | ADT Control iOS · `UberSeamlessLoginNew` | **Pass:** H.264 1920×1080 + G.711 μ-law audio track detected, FFplay, direct RTSP/TCP 554, Scrypted live preview; native PIR pulses decoded | **Not tested** |
+| RC845 (indoor) | ADT Control iOS · `UberSeamlessLoginNew` | **Pass:** FFplay video (TLS bridge), direct Python RTSP/TCP session; metadata received but PIR field absent | **Not tested** |
+| OC845 B (outdoor) | ADT Control iOS · `UberSeamlessLoginNew` | **Pass:** FFplay video (TLS bridge), direct Python RTSP/TCP session; native PIR pulses decoded | **Not tested** |
 
 The three entries above describe **one ADT system**. Firmware revisions, OS/app versions, credential lifetime, stream protocols and audio availability may differ elsewhere. No hardware was modified, unenrolled, or factory-reset during these tests.
+
+**Additional functional validation:** After the original setup, Scrypted/OpenCV triggered viewable **HomeKit Secure Video** recordings in Apple Home, including at least one outdoor-camera event. This does not establish that every individual camera's HKSV or audio path was independently tested, nor that HKSV works offline or after ADT cancellation. The PIR monitor was tested on both OC845 units. For packet counts and limitations, see [native motion research](docs/NATIVE_PIR_FINDINGS.md). All three cameras reported firmware `V1.0.01R53` during our investigation.
 
 ## Compatibility report template
 
@@ -36,5 +38,5 @@ Other notes (redacted):
 - Other OC/RC/ADC camera models and firmware versions.
 - Local credential stability across reboots, logouts, and password changes.
 - Operation with WAN disconnected or after canceling ADT service.
-- Scrypted was tested with the driveway camera (live preview); the other two were added but long-run stability, events, and audio in Scrypted are not yet characterized. Blue Iris and other NVRs are untested.
-- Motion events, snapshots, HomeKit Secure Video, audio playback in the NVR, and long-duration stability.
+- Scrypted live preview and HKSV recordings were observed, but per-camera end-to-end audio, day/night detection reliability, and long-duration stability remain uncharacterized. Blue Iris and other NVRs are untested.
+- Scrypted's native PIR → HKSV integration (not used; OpenCV remained active), MQTT with a live broker, and whether the RC845 exposes useful events through a different interface.
