@@ -1,0 +1,27 @@
+# Never commit authenticated ADT/Alarm.com captures or camera credentials
+*.bin
+*.har
+*.mitm
+*.pcap
+*.pcapng
+*.mobileconfig
+*.p12
+*.pfx
+*.pem
+*.key
+*.env
+.env
+.env.*
+adt-private/
+captures/
+secrets/
+adt-response*
+login-response*
+
+# Python / local development
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+.DS_Store
