@@ -3,9 +3,57 @@
 **A reproducible discovery and playback guide — tested November 15, 2026**  
 **Scope:** ADT Control on iOS; one indoor **RC845** and two outdoor **OC845** cameras; Fedora Linux used for capture, relay, and testing.
 
-> **TL;DR:** Yes, these ADT/Alarm.com cameras can stream video directly over the LAN, while still enrolled with ADT. The ADT Control iOS app's authenticated mobile API returns a per-camera local RTSP URL and camera credentials. On the tested cameras, the URL uses **RTSP tunneled over HTTPS** on a camera-specific high port. We used `socat` as a local TLS bridge and FFmpeg with `-rtsp_transport http` to play all three feeds. **The video transport is local; long-term independence from ADT, including after cancellation, is not yet proven.**
+> **TL;DR:** Yes: on our tested OC845 and RC845 cameras, the credentials recovered from an authenticated ADT Control iOS login response work with **ordinary RTSP over TCP on port 554**. The driveway OC845 displayed live video in **Scrypted v0.147.0 running as a Home Assistant OS add-on**, with no external restreamer. The other two cameras have also been added to Scrypted. The original `lre` URL uses a *different* camera-specific high port with an HTTPS-based RTSP tunnel; we retain that method below as a fallback. **Local video does not establish that the cameras work after an ADT cancellation or loss of internet.**
 
 This write-up documents a working procedure, including the problems encountered along the way. It is intended for people inspecting **cameras and accounts they own or are authorized to manage**. It does not exploit the camera, bypass account authentication, brute-force a password, or require resetting the device. Different ADT products, firmware versions, or account configurations may behave differently.
+
+## Quick start — direct RTSP and Scrypted (recommended)
+
+1. On your **own** ADT Control iOS account, capture the authenticated `UberSeamlessLoginNew` response with mitmproxy and save its raw XML/gzip body outside the repository. See [§4–§5](#4-capture-the-adt-control-mobile-response). **Never publish the capture.**
+2. Start the **interactive, standard-library-only configuration wizard**:
+
+   ```bash
+   python3 adc_setup_wizard.py
+   ```
+
+   Optionally provide a file explicitly:
+
+   ```bash
+   python3 adc_setup_wizard.py --capture ~/adt-private/login-response.bin
+   ```
+
+3. Choose the capture file, camera numbers or IP(s), the LAN IP override if needed, and direct RTSP port **554** (default). Pick **Scrypted** to obtain a URL without embedded login credentials, plus the username and password in separate fields. The wizard makes you explicitly type `REVEAL` and can store secrets in a *new, permissions-restricted file* outside Git.
+4. In the **RTSP Camera** plugin in Scrypted, add a camera and enter the separate **RTSP Stream URL**, **Username**, and **Password**. Use the actual stream query returned from the authenticated capture; do **not** assume `/img/media.sav?stream=2` applies to all cameras. Test live video. For a complete worked example, see [Scrypted / NVR guide](docs/nvr-scrypted.md).
+5. For NVRs that require embedded credentials (e.g. some Blue Iris configurations), choose **Blue Iris / generic NVR** in the wizard to export the complete `rtsp://username:password@CAMERA_LAN_IP:554/...` URL. **Blue Iris itself has not yet been tested** on this system.
+
+**Choose a mode:** Safe summary (no passwords or stream tokens); Scrypted (separate fields); NVR (complete authenticated direct RTSP URL); or original high-port URL (advanced HTTPS-tunnel diagnostics). The original safe `adc_local_test.py` is preserved. See [Compatibility](COMPATIBILITY.md) for test scope.
+
+**Security:** Direct RTSP on port 554 is typically **unencrypted**. Keep cameras on a trusted LAN and **never port-forward RTSP**. The URL's query may itself contain a secret even when credentials are entered separately. If port 554 does not work on your model, the [older local TLS relay method](#7-bridge-the-cameras-tls-tunnel-locally-with-socat) remains documented below.
+
+## Advanced export of full camera URLs
+
+**Prefer the interactive [`adc_setup_wizard.py`](adc_setup_wizard.py)**. It supports file selection, camera selection by index/IP, optional LAN IP overrides, port choice, optional FFprobe connectivity checks, Scrypted-friendly separate credential fields, and complete authenticated standard-RTSP URLs for NVR clients. It requires an explicit reveal confirmation, prints nothing sensitive by default, and can write a new mode-`0600` private file (no overwrite) outside Git.
+
+The older [`adc_url_export.py`](adc_url_export.py) is retained for command-line power users who want the **original HTTPS-tunneled high-port** URL and the local `socat` bridge URL. Its output also includes the simpler direct-port-554 and Scrypted formats. The original high-port URL is **not** interchangeable with the working plain RTSP/TCP port-554 URL.
+
+```bash
+mkdir -p -m 700 ~/adt-private
+python3 adc_url_export.py ~/adt-private/login-response.bin \
+  --index 1 --save-to ~/adt-private/camera-1-urls.txt \
+  --i-understand-the-risk
+```
+
+Do not submit any capture, credentials, stream tokens, or exported URLs to GitHub issues, forums, support tickets, or screenshots. Credentials and possibly stream tokens grant access to live camera feeds.
+
+## Compatibility at a glance
+
+| Model | Test result | Verified media | Notes |
+| --- | --- | --- | --- |
+| OC845 (driveway) | **Live in Scrypted + FFplay** | H.264 1080p + G.711 μ-law audio | Direct RTSP/TCP **554**; TLS relay also tested |
+| RC845 (basement) | **Live in FFplay; added to Scrypted** | Live picture (exact codecs not recorded in the publication) | TLS relay verified; port-554 Scrypted config added |
+| OC845 (lake) | **Live in FFplay; added to Scrypted** | Live picture (exact codecs not recorded in the publication) | TLS relay verified; port-554 Scrypted config added |
+
+These are three camera instances from **one installation**, not a claim that every firmware/ADT variant is compatible. Submit additional verified reports using the template in [COMPATIBILITY.md](COMPATIBILITY.md). Testing without an active ADT subscription remains outstanding.
 
 ## 1. What we actually proved
 
@@ -17,7 +65,7 @@ On November 15, 2026, the following worked on three ADT-enrolled cameras:
 | Basement | RC845 | Authenticated local feed displayed in FFplay |
 | Lake | OC845 | Authenticated local feed displayed in FFplay |
 
-The video path was **camera (private LAN IP) → encrypted TLS connection → local `socat` relay → FFplay on the same LAN**. No ADT or Alarm.com cloud video relay was used for these playback sessions. The **initial credentials came from an authenticated ADT Control API response**, and the cameras may still contact the cloud for other purposes. We have **not** yet tested whether the cameras continue serving these streams with the internet disconnected, after a reboot, after credential rotation, or after an ADT subscription is canceled.
+The original verified fallback path was **camera (private LAN IP) → encrypted TLS connection → local `socat` relay → FFplay on the same LAN**. We subsequently confirmed a **direct authenticated RTSP/TCP stream on port 554** for the driveway camera and displayed it in Scrypted running in HAOS without a relay. No ADT or Alarm.com cloud video relay was used for these playback sessions. The **initial credentials came from an authenticated ADT Control API response**, and the cameras may still contact the cloud for other purposes. We have **not** yet tested whether the cameras continue serving these streams with the internet disconnected, after a reboot, after credential rotation, or after an ADT subscription is canceled.
 
 This work builds on the earlier discovery by **dppeak in August 2026**, documented in [Omar-L/adc-video-bridge issue #35](https://github.com/Omar-L/adc-video-bridge/issues/35). That report describes the Alarm.com mobile API returning local RTSP credentials with an `UberLoginNew` response. Our test adds a particularly useful detail for ADT Control iOS: **`UberSeamlessLoginNew` also returned the camera records**, within an `<slnr>` XML document. It also demonstrates **audio on this OC845**, whereas the cameras in the earlier report had no audio stream.
 
@@ -28,7 +76,7 @@ You need:
 - An ADT Control / Alarm.com account authorized to view the cameras, with the iOS app already working.
 - A computer on the same LAN as the cameras; our commands use **Fedora 45**. The general method can be adapted to other operating systems.
 - `mitmproxy` / `mitmweb` to inspect **your own authenticated app traffic**.
-- `socat`, `ffprobe`, and `ffplay` for local testing.
+- **Optional:** `ffprobe` for direct RTSP connectivity testing and `ffplay` for local playback. `socat` is needed only for the legacy high-port TLS-tunnel fallback, not for Scrypted direct RTSP on port 554.
 - The ability to adjust the iPhone's Wi-Fi proxy and temporarily trust a locally generated root certificate.
 
 **Sensitive information warning:** The captured response may contain account tokens, camera login credentials, camera addresses, and account/device metadata. **Never publish a raw capture, decrypted response, full `lre` URL, screenshots containing secrets, mitmproxy CA private keys, or any captured cookies.** The companion Python helper prints only camera metadata, not credentials. It does pass the authenticated URL to a local FFmpeg process as an argument, which other local users/process-monitoring tools may be able to inspect. Use a trusted computer and clean up afterward.
@@ -38,11 +86,14 @@ You need:
 ## 3. Install the tools on Fedora
 
 ```bash
-sudo dnf install uv socat
+sudo dnf install uv
 uv tool install mitmproxy
 
+# Optional local testing tools:
 command -v ffprobe
 command -v ffplay
+# Only if you need the fallback HTTPS tunnel:
+sudo dnf install socat
 ```
 
 If `ffprobe` or `ffplay` is absent, install a suitable FFmpeg package. **Do not swap multimedia packages blindly**; there is a Fedora decoder note in §9. In our case, the default Fedora `ffmpeg-free` build identified the streams but its `libopenh264` decoder could not display the H.264 picture. Switching to the RPM Fusion full FFmpeg package resolved playback.
@@ -133,11 +184,13 @@ The records were nested in a top-level `<slnr>` document, under a `<cli>` sectio
 rtsp://<user>:<password>@<camera-lan-ip>:<camera-high-port>/img/media.sav?stream=<stream-id>
 ```
 
-The captured high ports were in the `41925–41927` range, specific to the three cameras. **Do not assume port 554 is correct.** You must use each camera's own host and port from your response. The script's numbered list lets you distinguish cameras without ever displaying full URLs.
+The captured **HTTPS tunnel** high ports were in the `41925–41927` range, specific to the three cameras. For **standard RTSP/TCP**, we subsequently found that **port 554** accepted these same credentials (directly verified for the driveway). Do not confuse the two transports: the captured *high port* is not a normal RTSP/TCP port. The wizard defaults to direct RTSP port 554; the safe tester still lists the high ports for fallback work.
 
 ## 7. Bridge the camera's TLS tunnel locally with socat
 
-This was the key transport discovery. Running ordinary RTSP directly against the captured high port failed with an “invalid data” error. Replacing `rtsp://` with `rtsps://` also failed. FFmpeg's native `-rtsp_transport https` path reached a **self-signed/expired-camera-certificate verification** error in our build, even with `-tls_verify 0` supplied. We therefore used `socat` to terminate TLS locally.
+**This is an optional fallback; try direct authenticated RTSP/TCP on port 554 first using the interactive wizard and Scrypted guide.**
+
+This was the key transport discovery during our initial experiments. Running ordinary RTSP directly against the captured high port failed with an “invalid data” error. Replacing `rtsp://` with `rtsps://` also failed. FFmpeg's native `-rtsp_transport https` path reached a **self-signed/expired-camera-certificate verification** error in our build, even with `-tls_verify 0` supplied. We therefore used `socat` to terminate TLS locally.
 
 In **Terminal 1**, start a relay for the first camera. Replace `CAMERA_LAN_IP` and `CAMERA_TLS_PORT` using the safe `list` output from §6:
 
@@ -149,7 +202,7 @@ socat -d -d \
 
 This means: **FFmpeg → local `127.0.0.1:8554` → `socat` → camera's TLS endpoint**. The relay passes the camera's authentication challenge and stream bytes; it does not need to know the username or password. `verify=0` is limited to this TLS connection, not a system-wide certificate setting. The loopback bind prevents other LAN clients from connecting to this relay directly.
 
-**Important:** It is not a generic plain-RTSP server. The RTSP client must use HTTP tunneling on the local side, as in the next step. This distinction will also matter for future Scrypted integration.
+**Important:** It is not a generic plain-RTSP server. The RTSP client must use HTTP tunneling on the local side, as in the next step. This is relevant only when using the fallback TLS relay; our Scrypted installation connects to standard port 554 directly.
 
 ## 8. Probe the camera, then play its live video
 
@@ -258,7 +311,7 @@ Do not distribute `~/.mitmproxy/mitmproxy-ca.pem` (it contains the private CA ke
 
 **We have proved local media transport, not total independence from ADT.** Open questions include whether the local credentials are stable, whether the cameras reconnect after an internet outage or reboot without cloud help, how on-demand streams behave over time, and whether any streams persist after subscription cancellation. **Do not cancel service based on this guide alone.** Test offline operation carefully, without disabling your security system's monitoring or emergency functionality.
 
-**Scrypted/HomeKit integration is not covered here yet.** We still need to deploy the TLS relays on an always-on machine, work out how Scrypted's RTSP input will handle HTTP tunneling, and verify discovery, audio, motion, recording, and HomeKit behavior. That will be a separate, tested Part 2—not an unverified set of promised instructions.
+**Scrypted direct RTSP is now confirmed** for a live driveway OC845 in Scrypted v0.147.0 on HAOS, and the basement/lake have been configured there. No extra restreaming service was required. **HomeKit, long-term stability, motion detection, Blue Iris, and subscription-independent operation remain unverified.** See the [Scrypted guide](docs/nvr-scrypted.md) for exact settings and limitations.
 
 ## References and credit
 

@@ -25,3 +25,16 @@ __pycache__/
 .venv/
 venv/
 .DS_Store
+
+# Exporter outputs (still save outside the repo)
+camera-*-urls.txt
+*camera-credentials*.txt
+
+# Private lab helper until independently tested and documented
+adt-scrypted-lab.py
+
+# Additional wizard exports and decrypted responses
+adt-camera-settings*.txt
+*camera-settings*.txt
+login-response*.xml
+adt-response*.xml

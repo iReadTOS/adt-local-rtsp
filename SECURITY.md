@@ -7,10 +7,13 @@ This project explains how to inspect **your own authorized ADT Control / Alarm.c
 Captured API responses may contain camera usernames/passwords, session cookies, access tokens, personal data, and home network details. Do not post raw HAR/mitmproxy captures, downloaded response bodies, complete RTSP URLs, or screenshots showing credentials to GitHub issues or discussions.
 
 - Save captured responses **outside the repository** (for example, `~/adt-private/login-response.bin`).
+- The interactive wizard defaults to safe metadata-only output; secret-bearing formats require explicitly typing `REVEAL`. Prefer its new private file export (mode `0600`) rather than printing passwords to terminal history/scrollback.
 - Keep private files readable only by your user (`chmod 600 ...`).
 - Never publish the mitmproxy CA private key (`~/.mitmproxy/mitmproxy-ca.pem`).
 - Inspect `git status`, `git diff --cached`, and proposed commits before pushing. `.gitignore` is a helpful safeguard, **not a guarantee**.
 - The test script passes a credentials-bearing RTSP URL to FFmpeg through process arguments; run it on a trusted machine and avoid sharing process listings.
+- Standard RTSP on port 554 is generally unencrypted; do not expose it to the internet or untrusted networks.
+- Do not publish Scrypted logs without checking for RTSP URLs with embedded query tokens, even when the login and password were entered separately.
 - Keep TLS relays bound to loopback until you deliberately design and secure an always-on deployment. `verify=0` disables verification only for the specified local camera connection.
 - Remove the temporary iPhone proxy/certificate and restore Lockdown Mode after capturing.
 
