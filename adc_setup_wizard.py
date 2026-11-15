@@ -2,6 +2,9 @@
 """Interactive local ADT/Alarm.com camera RTSP configuration wizard.
 
 Reads an authenticated login response YOU captured from cameras you administer.
+
+This wizard does not capture iPhone traffic or retrieve credentials from ADT.
+First-time setup instructions: docs/GETTING_STARTED.md
 Standard-library only. Does not call ADT/Alarm.com or change camera settings.
 
 Defaults to metadata-only, with no passwords or streaming query tokens shown.
@@ -270,11 +273,17 @@ def probe_one(cam: dict, port: int) -> str:
 
 
 def run(argv=None) -> int:
-    parser = argparse.ArgumentParser(description="Interactive ADT/Alarm.com RTSP configuration wizard")
+    parser = argparse.ArgumentParser(
+        description="Configure local RTSP from a previously captured ADT/Alarm.com response",
+        epilog="New here? Read docs/GETTING_STARTED.md to capture your authorized iOS session first. This tool does not log into ADT.",
+    )
     parser.add_argument("--capture", type=Path, help="Optional capture file; otherwise choose interactively")
     args = parser.parse_args(argv)
     print("ADT / Alarm.com RTSP configuration wizard")
+    print("Requires a previously saved ADT mobile login response (XML or gzip).")
+    print("To obtain one, see docs/GETTING_STARTED.md; this wizard cannot capture it.")
     print("For authorized cameras only. Nothing is uploaded or sent to a cloud API.")
+    print("\nStep 1/4 — Choose your previously saved response file")
     path = choose_capture(args.capture)
     try:
         cameras = load_cameras(path)
@@ -285,7 +294,9 @@ def run(argv=None) -> int:
         print("No lre RTSP cameras found in this response.")
         return 1
 
+    print("\nStep 2/4 — Choose camera(s)")
     chosen = choose_cameras(cameras)
+    print("\nStep 3/4 — Confirm LAN address and RTSP port")
     if yes("Change a camera IP address from the capture?", False):
         for _, cam in chosen:
             while True:
@@ -298,6 +309,7 @@ def run(argv=None) -> int:
                 print("Enter a private IPv4 address (10.x, 172.16–31.x, or 192.168.x).")
 
     port = choose_port()
+    print("\nStep 4/4 — Choose safe or credential-bearing output")
     mode = choose_mode()
     if mode == "safe":
         print("\n" + render(chosen, mode, port))
