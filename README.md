@@ -6,6 +6,56 @@ On November 15, 2026, we recovered the local camera credentials from an authenti
 
 > **Important limitation:** Local *video transport* is verified. Operation with internet disconnected, after credential rotation, or after canceling ADT service is **not** verified. Don't cancel service on the strength of this guide alone.
 
+## Proof of operation — tested on real cameras
+
+**Tested November 15, 2026, on one active ADT Control installation:** two outdoor **OC845** cameras and one indoor **RC845**, all reporting firmware `V1.0.01R53`. The client used **Fedora 45** for investigation and **Scrypted v0.147.0 on Home Assistant OS** for the NVR integration. The cameras remained enrolled, and no firmware flashing or factory reset was needed.
+
+These are observed hardware results, **not simulated output**. We distinguish a successful stream metadata probe from **visible live video**, and from **working recordings**:
+
+| Device | Actual playback and integration evidence | Native motion experiment |
+| --- | --- | --- |
+| **OC845 A (driveway)** | Live video displayed in FFplay through the high-port TLS relay; direct authenticated **RTSP/TCP 554** identified H.264 **1920×1080** video and a **G.711 μ-law audio track**; **live picture displayed in Scrypted** using the RTSP Camera plugin, without a relay | In a **90-second** run: **1,337** decoded PIR samples, **8** trigger pulses, **3** software-held events |
+| **OC845 B (lake)** | Live video displayed in FFplay through the TLS relay; a standalone client authenticated and received RTP directly on port **554**; subsequently added to Scrypted | In a **60-second** run: **882** PIR samples, **28** pulses, **4** software-held events |
+| **RC845 (basement)** | Live video displayed in FFplay through the TLS relay; direct RTSP/TCP authentication and RTP confirmed; subsequently added to Scrypted | Related RTP padding metadata observed, but **no PIR command** in the tested stream |
+
+### Visual proof from our installation
+
+**1. Live Scrypted stream — driveway OC845.** This is the actual local video preview in **Scrypted v0.147.0**, using the **RTSP Camera** plugin on **Home Assistant OS**. The camera stream used direct, authenticated **RTSP/TCP on port 554**; it did not require the TLS relay for Scrypted.
+
+![Scrypted RTSP Camera plugin displaying live video from an ADT OC845 camera, with a privacy-blurred driveway and redacted connection details](images/scrypted-proof-redacted.png)
+
+*Figure 1. Real OC845 video displayed in Scrypted. Stream settings are redacted; the property view is blurred and the original ADT logo is still visible.*
+
+**2. HomeKit Secure Video recording — driveway OC845.** This Apple Home screenshot shows a **recorded event**, labelled *“Animal seen.”* Our verified recording path used **Scrypted's OpenCV motion sensor and HomeKit integration**, not the experimental Sercomm PIR decoder. The ADT logo remains visible in the footage.
+
+![Apple Home showing an Animal seen HomeKit Secure Video recording from an ADT OC845 camera, with the driveway scene privacy-blurred](images/hksv-proof-redacted.png)
+
+*Figure 2. A recorded HKSV event viewable in Apple Home. The property scene is blurred for privacy, while the ADT logo and playback controls remain readable.*
+
+The screenshots document a **working local streaming and recording setup**, but neither image establishes operation without an internet connection or after ADT service cancellation.
+
+**Recording proof:** Scrypted's **OpenCV Motion Sensor** triggered at least one real **HomeKit Secure Video** recording that was viewable in Apple Home, including an outdoor-camera event. We did **not** use the experimental native PIR monitor to trigger HKSV. An audio track being detected does **not** prove end-to-end audio playback in HomeKit.
+
+**Our tested data path (simplified):**
+
+```text
+Authorized ADT Control response -> local credential extraction (one-time setup)
+                                     |
+Camera on trusted LAN -- RTSP/TCP :554 --> Scrypted RTSP Camera (HAOS)
+                                          |
+                                  OpenCV Motion Sensor
+                                          |
+                                   Scrypted HomeKit
+                                          |
+                                Apple Home / HKSV recording
+```
+
+The original camera-specific `lre` high port also worked through the [documented TLS relay](docs/TLS_FALLBACK.md), but the driveway's working Scrypted preview used **standard port 554** directly. The second OC845 and the RC845 were added to Scrypted; **per-camera preview, recording, and audio performance have not all been separately verified**.
+
+**Reproducible technical evidence:** [investigation and observed media codecs](docs/DISCOVERY.md), [Scrypted configuration and HKSV observation](docs/nvr-scrypted.md), [native PIR packet samples and measured event counts](docs/NATIVE_PIR_FINDINGS.md), and the [per-camera compatibility record](COMPATIBILITY.md). The images above have connection details obscured and their property views blurred. Do not publish unredacted captures, camera-identifying details, or authenticated stream URLs.
+
+> **Not proven:** operation without internet, after ADT subscription cancellation, or after credential rotation; long-term reliability; or full feature parity across all cameras. Our results are from **one installation**, not a compatibility guarantee.
+
 ## Start here
 
 | I want to… | Read this |
