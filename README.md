@@ -81,6 +81,17 @@ python3 adc_setup_wizard.py --capture ~/adt-private/login-response.bin
 
 Choose a camera by **number or IP**, keep the **standard RTSP port at 554** initially, then choose the output appropriate to your NVR. **Safe summary** is the default and displays no passwords or stream query tokens. The **Scrypted** mode shows separate URL/username/password fields; **NVR** mode can reveal a full credential-bearing URL. Sensitive outputs require typing `REVEAL` and can be saved only to a new private file. **This wizard does not capture ADT app traffic or obtain credentials on its own**; see the [how-to](docs/GETTING_STARTED.md) first.
 
+### Help expand compatibility
+
+This project began as an experiment with three ADT cameras from one installation. We've confirmed local RTSP playback, Scrypted integration, HomeKit Secure Video recording, and experimental native PIR metadata decoding.
+
+However, many questions remain unanswered, including compatibility with other camera models, firmware versions, and installations without active ADT subscriptions.
+
+**If you have an ADT, Alarm.com, or Sercomm camera, we'd love to hear your findings!**
+
+Whether your experiment succeeds or fails, your results could help others reuse their existing hardware.
+
+Please open a GitHub issue with your camera model, firmware version, testing method, and results. Never share account credentials, authentication tokens, complete RTSP URLs, or unredacted API responses.
 ## Scripts
 
 | File | Purpose |
