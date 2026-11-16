@@ -81,6 +81,7 @@ python3 adc_setup_wizard.py --capture ~/adt-private/login-response.bin
 
 Choose a camera by **number or IP**, keep the **standard RTSP port at 554** initially, then choose the output appropriate to your NVR. **Safe summary** is the default and displays no passwords or stream query tokens. The **Scrypted** mode shows separate URL/username/password fields; **NVR** mode can reveal a full credential-bearing URL. Sensitive outputs require typing `REVEAL` and can be saved only to a new private file. **This wizard does not capture ADT app traffic or obtain credentials on its own**; see the [how-to](docs/GETTING_STARTED.md) first.
 
+## Scripts
 | File | Purpose |
 | --- | --- |
 | [`adc_setup_wizard.py`](adc_setup_wizard.py) | **Recommended.** Interactive discovery, camera/IP selection, direct RTSP export, optional FFprobe test, and private file output |
@@ -111,7 +112,6 @@ Whether your experiment succeeds or fails, your results could help others reuse 
 
 Please open a GitHub issue with your camera model, firmware version, testing method, and results. Never share account credentials, authentication tokens, complete RTSP URLs, or unredacted API responses.
 
-## Scripts
 ## Security and scope
 
 This is for cameras and accounts **you own or are authorized to administer**. It requires your own authenticated ADT Control session; it is **not** a password bypass. The capture may include account tokens, session data, and reusable camera credentials. **Never upload the captured response, complete RTSP URLs, passwords, or mitmproxy certificates to a public repository or issue.** Even an RTSP URL without embedded username/password may contain a stream secret in its query.
